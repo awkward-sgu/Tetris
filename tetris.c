@@ -58,11 +58,7 @@ void DrawOutline() {
 	move(2, WIDTH + 10);
 	printw("NEXT BLOCK");
 	DrawBox(3, WIDTH + 10, 4, 8);
-
-	/* next block을 보여주는 공간의 태두리를 그린다.*/
-	move(8, WIDTH + 10);
-	printw("NEXT BLOCK");
-	DrawBox(11, WIDTH + 10, 4, 8);
+	DrawBox(9, WIDTH + 10, 4, 8);
 
 	/* score를 보여주는 공간의 태두리를 그린다.*/
 	move(15, WIDTH + 10);
@@ -120,8 +116,9 @@ int ProcessCommand(int command) {
 			blockX--;
 		break;
 	case ' ':
-		while (CheckToMove(field, nextBlock[0], blockRotate, blockY + 1, blockX))
-			ProcessCommand(KEY_DOWN);
+			for(int shadowY = blockY; shadowY < HEIGHT; shadowY++)
+				if(CheckToMove(field, nextBlock[0], blockRotate, shadowY + 1, blockX))
+					ProcessCommand(KEY_DOWN);
 		break;
 	default:
 		break;
@@ -143,13 +140,16 @@ void DrawField() {
 			else printw(".");
 		}
 	}
+
+	move(HEIGHT, WIDTH + 10); // added
 }
 
 
 void PrintScore(int score) {
 	move(17, WIDTH + 11);
 	printw("%8d", score);
-	move(HEIGHT, WIDTH + 10);
+
+	move(HEIGHT, WIDTH + 10); // added
 }
 
 void DrawNextBlock(int* nextBlock) {
@@ -263,9 +263,9 @@ int CheckToMove(char f[HEIGHT][WIDTH], int currentBlock, int blockRotate, int bl
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (block[currentBlock][blockRotate][i][j] == 1) {
-				if (i + blockY >= HEIGHT)
+				if (i + blockY < 0 || i + blockY >= HEIGHT)
 					return 0;
-				if (j + blockX >= WIDTH)
+				if (j + blockX < 0 || j + blockX >= WIDTH)
 					return 0;
 				if (f[i + blockY][j + blockX] == 1)
 					return 0;
@@ -285,17 +285,15 @@ void DrawChange(char f[HEIGHT][WIDTH], int command, int currentBlock, int blockR
 	switch (command) {
 	case KEY_UP:
 		originalRotate = (blockRotate + 3) % 4;
+		break;
 	case KEY_DOWN:
-		if ((drawFlag = CheckToMove(f, currentBlock, blockRotate, blockY + 1, blockX)))
-			originalY--;
+		originalY--;
 		break;
 	case KEY_RIGHT:
-		if ((drawFlag = CheckToMove(f, currentBlock, blockRotate, blockY + 1, blockX)))
-			originalX--;
+		originalX--;
 		break;
 	case KEY_LEFT:
-		if ((drawFlag = CheckToMove(f, currentBlock, blockRotate, blockY + 1, blockX)))
-			originalX++;
+		originalX++;
 		break;
 	default:
 		break;
@@ -311,10 +309,10 @@ void DrawChange(char f[HEIGHT][WIDTH], int command, int currentBlock, int blockR
 void BlockDown(int sig) {
 	// user code
 
-	if (CheckToMove(field, blockRotate, blockY + 1, blockX)) {
-		DeleteBlockWithFeatures(blockY, blockX, nextBlock[0], blockRotate);
+	if (CheckToMove(field, nextBlock[0], blockRotate, blockY + 1, blockX)) {
+		DeleteBlock(blockY, blockX, nextBlock[0], blockRotate);
 		blockY++;
-		DrawBlockWithFeatures(blockY, blockX, nextBlock[0], blockRotate, ' ');
+		DrawBlockWithFeatures(blockY, blockX, nextBlock[0], blockRotate);
 	}
 	else {
 		if (blockY == -1)
@@ -375,7 +373,7 @@ int DeleteLine(char f[HEIGHT][WIDTH]) {
 		}
 		if (check) {
 			num_line++;
-			for (int i1 = i; i1 > 0; i1++) {
+			for (int i1 = i; i1 > 0; i1--) {
 				for (int j1 = 0; j1 < WIDTH; j1++) {
 					f[i1][j1] = f[i1 - 1][j1];
 				}
@@ -406,7 +404,7 @@ void DrawShadow(int y, int x, int blockID, int blockRotate) {
 		}
 
 		if (shadowY - y >= 4)
-			DrawBlock(blockY, blockX, blockID, blockRotate, '/');
+			DrawBlock(shadowY, blockX, blockID, blockRotate, '/');
 	}
 
 }
@@ -432,8 +430,8 @@ void DeleteBlock(int y, int x, int blockID, int blockRotate) {
 		if (shadowY - y >= 4)
 			for (i = 0; i < 4; i++)
 				for (j = 0; j < 4; j++) {
-					if (block[blockID][blockRotate][i][j] == 1 && i + y >= 0) {
-						move(i + y + 1, j + x + 1);
+					if (block[blockID][blockRotate][i][j] == 1 && i + shadowY >= 0) {
+						move(i + shadowY + 1, j + x + 1);
 						printw(".");
 					}
 				}
