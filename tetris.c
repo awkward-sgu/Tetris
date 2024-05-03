@@ -56,14 +56,15 @@ void DrawOutline() {
 
 	/* next block을 보여주는 공간의 태두리를 그린다.*/
 	move(2, WIDTH * 2 + 10);
-	printw("  NEXT BLOCK  ");
+	printw(" NEXT BLOCK ");
 	DrawBox(3, WIDTH * 2 + 10, 4, 12);
-	DrawBox(9, WIDTH * 2 + 10, 4, 12);
+	if(SHOW_NEXT2)
+		DrawBox(9, WIDTH * 2 + 10, 4, 12);
 
 	/* score를 보여주는 공간의 태두리를 그린다.*/
-	move(15, WIDTH * 2 + 10);
-	printw("  SCORE");
-	DrawBox(16, WIDTH * 2 + 10, 1, 12);
+	move(9 + 6 * SHOW_NEXT2, WIDTH * 2 + 10);
+	printw(" SCORE");
+	DrawBox(10 + 6 * SHOW_NEXT2, WIDTH * 2 + 10, 1, 12);
 }
 
 int GetCommand() {
@@ -146,7 +147,7 @@ void DrawField() {
 
 
 void PrintScore(int score) {
-	move(17, WIDTH * 2 + 11);
+	move(11 + 6 * SHOW_NEXT2, WIDTH * 2 + 11);
 	printw("%12d", score);
 
 	move(HEIGHT, WIDTH * 2 + 10); // added
@@ -165,15 +166,17 @@ void DrawNextBlock(int* nextBlock) {
 			else printw("  ");
 		}
 	}
-	for (i = 0; i < 4; i++) {
-		move(10 + i, WIDTH * 2 + 13);
-		for (j = 0; j < 4; j++) {
-			if (block[nextBlock[2]][0][i][j] == 1) {
-				attron(A_REVERSE);
-				printw("  ");
-				attroff(A_REVERSE);
+	if(SHOW_NEXT2){
+		for (i = 0; i < 4; i++) {
+			move(10 + i, WIDTH * 2 + 13);
+			for (j = 0; j < 4; j++) {
+				if (block[nextBlock[2]][0][i][j] == 1) {
+					attron(A_REVERSE);
+					printw("  ");
+					attroff(A_REVERSE);
+				}
+				else printw("  ");
 			}
-			else printw("  ");
 		}
 	}
 }
@@ -185,10 +188,8 @@ void DrawBlock(int y, int x, int blockID, int blockRotate, char tile) {
 			if (block[blockID][blockRotate][i][j] == 1 && i + y >= 0) {
 				move(i + y + 1, (j + x) * 2 + 1);
 				attron(A_REVERSE);
-				attron(COLOR_PAIR(0));
 				printw("%c ", tile);
 				attroff(A_REVERSE);
-				attroff(COLOR_PAIR(0));
 			}
 		}
 
