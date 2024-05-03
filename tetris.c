@@ -168,7 +168,7 @@ void DrawNextBlock(int* nextBlock) {
 	for (i = 0; i < 4; i++) {
 		move(10 + i, WIDTH + 13);
 		for (j = 0; j < 4; j++) {
-			if (block[nextBlock[1]][0][i][j] == 1) {
+			if (block[nextBlock[2]][0][i][j] == 1) {
 				attron(A_REVERSE);
 				printw(" ");
 				attroff(A_REVERSE);
