@@ -23,12 +23,25 @@
 
 // menu number
 #define MENU_PLAY '1'
+#define MENU_RANK '2'
 #define MENU_EXIT '4'
 
 // 사용자 이름의 길이
 #define NAMELEN 16
-
+#define MAX_RANK 100
+// 최대 노드의 개수
 #define CHILDREN_MAX 36
+
+// added - rank system
+typedef struct _Node{
+	char name[NAMELEN+1];
+	int score;
+	struct _Node* link;
+} Node;
+
+Node* a = NULL;
+int score_number;
+
 
 typedef struct _RecNode{
 	int lv,score;
@@ -146,6 +159,7 @@ int gameOver=0;			/* 게임이 종료되면 1로 setting된다.*/
 int timed_out;
 int recommendR,recommendY,recommendX; // 추천 블럭 배치 정보. 차례대로 회전, Y 좌표, X 좌표
 RecNode *recRoot;
+
 
 /***********************************************************
  *	테트리스의 모든  global 변수를 초기화 해준다.
@@ -354,6 +368,35 @@ void writeRankFile();
  *	return	: none
  ***********************************************************/
 void newRank(int score);
+
+/***********************************************************
+ *	사용자로부터 입력된 숫자를 읽는다
+ *	input	: (int*) 읽을 숫자
+          (int) 숫자의 길이 (자릿수)
+ *	return	: none
+ ***********************************************************/
+void readnumber(int* num, int size);
+
+/***********************************************************
+ *	사용자로부터 입력된 문자열을 읽는다
+ *	input	: (char*) 읽을 문자열
+          (int) 문자열의 길이
+ *	return	: none
+ ***********************************************************/
+void readstring(char* str, int size);
+
+/***********************************************************
+ *	동적할당된 랭크 노드들을 할당 해제한다
+ *	input	: none
+ *	return	: none
+ ***********************************************************/
+void rankfree();
+
+
+
+
+
+void DrawRecommend(int y, int x, int blockID, int blockRotate);
 
 /***********************************************************
  *	추천 블럭 배치를 구한다.

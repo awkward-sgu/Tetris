@@ -11,10 +11,13 @@ int main() {
 
 	srand((unsigned int)time(NULL));
 
+	createRankList();
+
 	while (!exit) {
 		clear();
 		switch (menu()) {
 		case MENU_PLAY: play(); break;
+		case MENU_RANK: rank(); break;
 		case MENU_EXIT: exit = 1; break;
 		default: break;
 		}
@@ -22,6 +25,7 @@ int main() {
 
 	endwin();
 	system("clear");
+	rankfree();
 	return 0;
 }
 
@@ -315,7 +319,16 @@ void BlockDown(int sig) {
 		DrawBlockWithFeatures(blockY, blockX, nextBlock[0], blockRotate);
 	}
 	else {
-		if (blockY == -1)
+		int check = 0;
+		if(blockY == -2)
+			check = 1;
+		if(!check)
+			for(int j = 0; j < WIDTH; j++)
+				if(field[0][j]){
+					check = 1;
+					break;
+				}
+		if (check)
 			gameOver = 1;
 
 		score += AddBlockToField(field, nextBlock[0], blockRotate, blockY, blockX);
@@ -325,7 +338,7 @@ void BlockDown(int sig) {
 		nextBlock[1] = nextBlock[2];
 		nextBlock[2] = rand() % NUM_OF_SHAPE;
 		blockRotate = 0;
-		blockY = -1;
+		blockY = -2; // block does not show here, but next time
 		blockX = WIDTH / 2 - 2;
 		DrawNextBlock(nextBlock);
 		DrawField();
@@ -448,21 +461,317 @@ void DrawBlockWithFeatures(int y, int x, int blockID, int blockRotate) {
 
 
 
-void createRankList() {
-	// user code
+///////////////////////  2주차  ///////////////////////
+
+
+
+void createRankList(){
+	// 목적: Input파일인 "rank.txt"에서 랭킹 정보를 읽어들임, 읽어들인 정보로 랭킹 목록 생성
+	// 1. "rank.txt"열기
+	// 2. 파일에서 랭킹정보 읽어오기
+	// 3. LinkedList로 저장
+	// 4. 파일 닫기
+	FILE *fp;
+	int i, j;
+	score_number = 0;
+	a = malloc(sizeof(Node));
+	Node* curr = a;
+
+	//1. 파일 열기
+	fp = fopen("rank.txt", "r");
+
+	// 2. 정보읽어오기
+	/* int fscanf(FILE* stream, const char* format, ...);
+	stream:데이터를 읽어올 스트림의 FILE 객체를 가리키는 파일포인터
+	format: 형식지정자 등등
+	변수의 주소: 포인터
+	return: 성공할 경우, fscanf 함수는 읽어들인 데이터의 수를 리턴, 실패하면 EOF리턴 */
+	// EOF(End Of File): 실제로 이 값은 -1을 나타냄, EOF가 나타날때까지 입력받아오는 if문
+	if (fscanf(fp, "%d", &j) != EOF) {
+		for(i = 0; i < j; i++) {
+			curr->link = malloc(sizeof(Node));
+			curr = curr->link;
+			fscanf(fp, "%16s %d", curr->name, &curr->score);
+			
+			score_number++;
+		}
+		curr->link = NULL;
+		// 수정 : 맨 첫 줄에 목록의 개수가 나오기 때문에 개수만큼 입력받음
+	}
+	else {
+		return;
+	}
+	// 4. 파일닫기
+	fclose(fp);
 }
 
-void rank() {
-	// user code
+void rank(){
+	//목적: rank 메뉴를 출력하고 점수 순으로 X부터~Y까지 출력함
+	//1. 문자열 초기화
+	int X=1, Y=score_number, ch, i, j;
+	clear();
+
+	//2. printw()로 3개의 메뉴출력
+	printw("1. list ranks from X to Y\n");
+	printw("2. list ranks by a specific name\n");
+	printw("3. delete a specific rank\n");
+
+	//3. wgetch()를 사용하여 변수 ch에 입력받은 메뉴번호 저장
+	ch = wgetch(stdscr);
+
+	//4. 각 메뉴에 따라 입력받을 값을 변수에 저장
+	//4-1. 메뉴1: X, Y를 입력받고 적절한 input인지 확인 후(X<=Y), X와 Y사이의 rank 출력
+
+	Node* curr = a;
+
+	if (ch == '1') {
+		printw("X: ");
+		readnumber(&X, 2);
+		printw("Y: ");
+		readnumber(&Y, 2);
+
+		printw("       name       |   score\n");
+		printw("------------------------------\n");
+
+		if(X == -1)
+			X = 1;
+		if(Y == -1)
+			Y = score_number;
+
+		if(X < 1)
+			X = 1;
+		if(Y < 1)
+			Y = 1;
+
+		if(Y > score_number)
+			Y = score_number;
+		
+		if(score_number) {
+			if(X <= Y && X <= score_number) {
+				for(i = 0; i < X; i++) {
+					curr = curr->link;
+				}
+				for(; i <= Y; i++) {
+					printw("%-16s  | %d\n", curr->name, curr->score);
+					curr = curr->link;
+				}
+			}
+			else {
+				printw("\nsearch failure: no rank in the list\n");
+			}
+		}
+
+	}
+
+	//4-2. 메뉴2: 문자열을 받아 저장된 이름과 비교하고 이름에 해당하는 리스트를 출력
+	else if ( ch == '2') {
+		char str[NAMELEN+1];
+		int check = 0;
+		printw("name: ");
+		readstring(str, NAMELEN);
+
+		printw("       name       |   score\n");
+		printw("------------------------------\n");
+		for(int i = 0; i < score_number; i++) {
+			curr = curr->link;
+			if(!strcmp(str, curr->name)) {
+				printw("%-16s  | %d\n", curr->name, curr->score);
+				check = 1;
+			}
+		}
+
+		if(!check){
+			printw("\nsearch failure: no name in the list\n");
+		}
+
+	}
+
+	//4-3. 메뉴3: rank번호를 입력받아 리스트에서 삭제
+	else if ( ch == '3') {
+		Node* prev = NULL;
+		int num;
+		printw("Input the rank: ");
+		readnumber(&X, 2);
+
+		if(X < 1 || X > score_number) {
+			printw("\nsearch failure: the rank not in the list\n");
+		}
+		else {
+			for(int i = 0; i < X; i++){
+				prev = curr;
+				curr = curr->link;
+			}
+			prev->link = curr->link;
+			free(curr);
+			score_number--;
+			writeRankFile();
+			printw("\nresult: the rank deleted\n");
+		}
+	}
+	else
+		return;
+	getch(); // 아무 키를 누를 시 종료
+
 }
 
-void writeRankFile() {
-	// user code
+void writeRankFile(){
+	// 목적: 추가된 랭킹 정보가 있으면 새로운 정보를 "rank.txt"에 쓰고 없으면 종료
+	int sn, i;
+	//1. "rank.txt" 연다
+	FILE *fp = fopen("rank.txt", "w");
+
+	//2. 랭킹 정보들의 수를 "rank.txt"에 기록
+	fprintf(fp, "%d\n", score_number);
+
+
+	//3. 탐색할 노드가 더 있는지 체크하고 있으면 다음 노드로 이동, 없으면 종료
+	Node* curr = a->link;
+	for(i = 0; i < score_number; i++){
+		fprintf(fp, "%s %d\n", curr->name, curr->score);
+		curr = curr->link;
+	}
+	fclose(fp);
 }
 
-void newRank(int score) {
-	// user code
+void newRank(int score){
+	// 목적: GameOver시 호출되어 사용자 이름을 입력받고 score와 함께 리스트의 적절한 위치에 저장
+	char str[NAMELEN+1];
+	int i, j;
+	clear();
+	//1. 사용자 이름을 입력받음
+	printw("your name: ");
+	readstring(str, NAMELEN);
+	//2. 새로운 노드를 생성해 이름과 점수를 저장, score_number가 CHILDREN_MAX를 넘어서면 꼴찌 없앰
+	Node* newnode = malloc(sizeof(Node));
+	for(i = 0; i < NAMELEN + 1; i++)
+		newnode->name[i] = str[i];
+	newnode->score = score;
+
+
+	Node* prev = a;
+	Node* curr = a->link;
+
+	for(j = 0; j < score_number; j++){
+		if(newnode->score > curr->score)
+			break;
+		prev = curr;
+		curr = curr->link;
+	}
+
+	prev->link = newnode;
+	newnode->link = curr;
+	score_number++;
+
+	if(score_number > CHILDREN_MAX){
+		curr = a;
+		for(i = 0; i < score_number; i++){
+			curr = curr->link;
+		}
+		Node* temp = curr;
+		curr->link = NULL;
+		free(temp);
+		score_number--;
+	}
+
+	writeRankFile();
 }
+
+void readnumber(int* num, int size){
+	if(size <= 0)
+		return;
+
+	int ch;
+	char* buffer = malloc(size);
+	buffer[0] = 0;
+	int i = 0;
+	int n = 0;
+	while(1){
+		ch = wgetch(stdscr);
+		if('0' <= ch && ch <= '9'){
+			if(i < size) {
+				printw("%c", ch);
+				buffer[i++] = ch;
+			}
+		}
+		else if(ch == '\n') {
+			printw("\n");
+			break;
+		}
+		else if(ch == KEY_BACKSPACE) {
+			if(i > 0){
+				i--;
+				int y,x;
+				getyx(stdscr,y,x);
+				x--;
+				move(y,x);
+				printw(" ");
+				move(y,x);
+			}
+		}
+	}
+
+	n = buffer[0] - '0';
+	for(int j = 1; j < i; j++) {
+		n *= 10;
+		n += buffer[j] - '0';
+	}
+	*num = n;
+
+	if(i == 0)
+		*num = -1;
+	free(buffer);
+}
+
+void readstring(char* str, int size){
+	if(size <= 0)
+		return;
+	
+	int ch;
+	char* buffer = malloc(size + 1);
+	int i = 0;
+	while(1){
+		ch = wgetch(stdscr);
+		if(33 <= ch && ch <= 126){
+			if(i < size) {
+				printw("%c", ch);
+				buffer[i++] = ch;
+			}
+		}
+		else if(ch == '\n') {
+			printw("\n");
+			break;
+		}
+		else if(ch == KEY_BACKSPACE) {
+			if(i > 0){
+				i--;
+				int y,x;
+				getyx(stdscr,y,x);
+				x--;
+				move(y,x);
+				printw(" ");
+				move(y,x);
+			}
+		}
+	}
+	buffer[i++] = '\0';
+
+	for(int j = 0; j < i; j++)
+		str[j] = buffer[j];
+	free(buffer);
+}
+
+void rankfree(){
+	Node* curr = a;
+	Node* temp;
+	for(int i = 0; i <= score_number; i++){
+		temp = curr;
+		curr = curr->link;
+		free(temp);
+	}
+}
+
+//////////////////////    3주차    //////////////////////
+
 
 void DrawRecommend(int y, int x, int blockID, int blockRotate) {
 	// user code
