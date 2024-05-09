@@ -10,6 +10,14 @@
 #include <string.h>
 #include <unistd.h> // added
 
+
+/* mode : 0 or 1 */
+#define SHADOW_ON 1
+#define SHOW_NEXT2 1
+#define WIDE_BLOCK 0
+
+
+
 #define WIDTH	10
 #define HEIGHT	22
 #define NOTHING	0
@@ -19,7 +27,7 @@
 #define BLOCK_HEIGHT	4
 #define BLOCK_WIDTH	4
 #define BLOCK_NUM	3
-#define SHADOW_ON 1
+#define MODIFIED_WIDTH WIDTH + WIDTH * WIDE_BLOCK
 
 // menu number
 #define MENU_PLAY '1'

@@ -56,18 +56,23 @@ void InitTetris() {
 void DrawOutline() {
 	int i, j;
 	/* 블럭이 떨어지는 공간의 태두리를 그린다.*/
-	DrawBox(0, 0, HEIGHT, WIDTH);
+	DrawBox(0, 0, HEIGHT, MODIFIED_WIDTH);
 
 	/* next block을 보여주는 공간의 태두리를 그린다.*/
-	move(2, WIDTH + 10);
+	move(2, MODIFIED_WIDTH + 10);
+	if(WIDE_BLOCK)
+		printw("  ");
 	printw("NEXT BLOCK");
-	DrawBox(3, WIDTH + 10, 4, 8);
-	DrawBox(9, WIDTH + 10, 4, 8);
+	DrawBox(3, MODIFIED_WIDTH + 10, 4, 8 + 4 * WIDE_BLOCK);
+	if(SHOW_NEXT2)
+		DrawBox(9, MODIFIED_WIDTH + 10, 4, 8 + 4 * WIDE_BLOCK);
 
 	/* score를 보여주는 공간의 태두리를 그린다.*/
-	move(15, WIDTH + 10);
-	printw("SCORE");
-	DrawBox(16, WIDTH + 10, 1, 8);
+	move(9 + 6 * SHOW_NEXT2, MODIFIED_WIDTH + 10);
+	if(WIDE_BLOCK)
+		printw(" ");
+	printw(" SCORE");
+	DrawBox(10 + 6 * SHOW_NEXT2, MODIFIED_WIDTH + 10, 1, 8 + 4 * WIDE_BLOCK);
 }
 
 int GetCommand() {
@@ -133,53 +138,76 @@ int ProcessCommand(int command) {
 
 void DrawField() {
 	int i, j;
-	for (j = 0; j < HEIGHT; j++) {
-		move(j + 1, 1);
-		for (i = 0; i < WIDTH; i++) {
-			if (field[j][i] == 1) {
-				attron(A_REVERSE);
-				printw(" ");
-				attroff(A_REVERSE);
+		for (j = 0; j < HEIGHT; j++) {
+			move(j + 1, 1);
+			for (i = 0; i < WIDTH; i++) {
+				if (field[j][i] == 1) {
+					attron(A_REVERSE);
+					printw(" ");
+					if(WIDE_BLOCK)
+						printw(" ");
+					attroff(A_REVERSE);
+				}
+				else {
+					printw(".");
+					if(WIDE_BLOCK)
+						printw(" ");
+				}
 			}
-			else printw(".");
 		}
-	}
 
-	move(HEIGHT, WIDTH + 10); // added
+		move(HEIGHT, MODIFIED_WIDTH + 10); // added
 }
 
 
 void PrintScore(int score) {
-	move(17, WIDTH + 11);
+	move(11 + 6 * SHOW_NEXT2, MODIFIED_WIDTH + 11);
+	if(WIDE_BLOCK)
+		printw("    ");
 	printw("%8d", score);
 
-	move(HEIGHT, WIDTH + 10); // added
+	move(HEIGHT, MODIFIED_WIDTH + 10); // added
 }
 
 void DrawNextBlock(int* nextBlock) {
 	int i, j;
 	for (i = 0; i < 4; i++) {
-		move(4 + i, WIDTH + 13);
+		move(4 + i, MODIFIED_WIDTH + 13);
 		for (j = 0; j < 4; j++) {
 			if (block[nextBlock[1]][0][i][j] == 1) {
 				attron(A_REVERSE);
 				printw(" ");
+				if(WIDE_BLOCK)
+					printw(" ");
 				attroff(A_REVERSE);
 			}
-			else printw(" ");
-		}
-	}
-	for (i = 0; i < 4; i++) {
-		move(10 + i, WIDTH + 13);
-		for (j = 0; j < 4; j++) {
-			if (block[nextBlock[2]][0][i][j] == 1) {
-				attron(A_REVERSE);
+			else {
 				printw(" ");
-				attroff(A_REVERSE);
+				if(WIDE_BLOCK)
+						printw(" ");
 			}
-			else printw(" ");
 		}
 	}
+	if(SHOW_NEXT2){
+		for (i = 0; i < 4; i++) {
+			move(10 + i, MODIFIED_WIDTH + 13);
+			for (j = 0; j < 4; j++) {
+				if (block[nextBlock[2]][0][i][j] == 1) {
+					attron(A_REVERSE);
+					printw(" ");
+					if(WIDE_BLOCK)
+						printw(" ");
+					attroff(A_REVERSE);
+				}
+				else {
+					printw(" ");
+					if(WIDE_BLOCK)
+						printw(" ");
+				}
+			}
+		}
+	}
+
 }
 
 void DrawBlock(int y, int x, int blockID, int blockRotate, char tile) {
@@ -187,14 +215,19 @@ void DrawBlock(int y, int x, int blockID, int blockRotate, char tile) {
 	for (i = 0; i < 4; i++)
 		for (j = 0; j < 4; j++) {
 			if (block[blockID][blockRotate][i][j] == 1 && i + y >= 0) {
-				move(i + y + 1, j + x + 1);
+				if(WIDE_BLOCK)
+					move(i + y + 1, (j + x) * 2 + 1);
+				else
+					move(i + y + 1, j + x + 1);
 				attron(A_REVERSE);
 				printw("%c", tile);
+				if(WIDE_BLOCK)
+					printw(" ");
 				attroff(A_REVERSE);
 			}
 		}
 
-	move(HEIGHT, WIDTH + 10);
+	move(HEIGHT, MODIFIED_WIDTH + 10);
 }
 
 void DrawBox(int y, int x, int height, int width) {
@@ -232,9 +265,17 @@ void play() {
 		command = GetCommand();
 		if (ProcessCommand(command) == QUIT) {
 			alarm(0);
-			DrawBox(HEIGHT / 2 - 1, WIDTH / 2 - 5, 1, 10);
-			move(HEIGHT / 2, WIDTH / 2 - 4);
-			printw("Good-bye!!");
+			if(WIDE_BLOCK){
+				DrawBox(HEIGHT / 2 - 1, WIDTH - 10, 1, 20);
+				move(HEIGHT / 2, WIDTH - 9);
+				printw("     Good-bye!!     ");
+			}
+			else{
+				DrawBox(HEIGHT / 2 - 1, WIDTH / 2 - 5, 1, 10);
+				move(HEIGHT / 2, WIDTH / 2 - 4);
+				printw("Good-bye!!");
+			}
+			move(HEIGHT, MODIFIED_WIDTH + 10); // added
 			refresh();
 			getch();
 
@@ -244,9 +285,17 @@ void play() {
 
 	alarm(0);
 	getch();
-	DrawBox(HEIGHT / 2 - 1, WIDTH / 2 - 5, 1, 10);
-	move(HEIGHT / 2, WIDTH / 2 - 4);
-	printw("GameOver!!");
+	if(WIDE_BLOCK){
+		DrawBox(HEIGHT / 2 - 1, WIDTH - 10, 1, 20);
+		move(HEIGHT / 2, WIDTH - 9);
+		printw("     GameOver!!     ");
+	}
+	else{
+		DrawBox(HEIGHT / 2 - 1, WIDTH / 2 - 5, 1, 10);
+		move(HEIGHT / 2, WIDTH / 2 - 4);
+		printw("GameOver!!");
+	}
+	move(HEIGHT, MODIFIED_WIDTH + 10); // added
 	refresh();
 	getch();
 	newRank(score);
@@ -427,8 +476,13 @@ void DeleteBlock(int y, int x, int blockID, int blockRotate) {
 	for (i = 0; i < 4; i++)
 		for (j = 0; j < 4; j++) {
 			if (block[blockID][blockRotate][i][j] == 1 && i + y >= 0) {
-				move(i + y + 1, j + x + 1);
+				if(WIDE_BLOCK)
+					move(i + y + 1, (j + x) * 2 + 1);
+				else
+					move(i + y + 1, j + x + 1);
 				printw(".");
+				if(WIDE_BLOCK)
+					printw(" ");
 			}
 		}
 
@@ -444,12 +498,17 @@ void DeleteBlock(int y, int x, int blockID, int blockRotate) {
 			for (i = 0; i < 4; i++)
 				for (j = 0; j < 4; j++) {
 					if (block[blockID][blockRotate][i][j] == 1 && i + shadowY >= 0) {
-						move(i + shadowY + 1, j + x + 1);
+						if(WIDE_BLOCK)
+							move(i + shadowY + 1, (j + x) * 2 + 1);
+						else
+							move(i + shadowY + 1, j + x + 1);
 						printw(".");
+						if(WIDE_BLOCK)
+							printw(" ");
 					}
 				}
 	}
-	move(HEIGHT, WIDTH + 10);
+	move(HEIGHT, MODIFIED_WIDTH + 10);
 }
 
 void DrawBlockWithFeatures(int y, int x, int blockID, int blockRotate) {
