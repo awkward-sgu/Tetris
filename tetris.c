@@ -371,6 +371,11 @@ void BlockDown(int sig) {
 		int check = 0;
 		if(blockY == -2)
 			check = 1;
+
+		score += AddBlockToField(field, nextBlock[0], blockRotate, blockY, blockX);
+		score += DeleteLine(field);
+		PrintScore(score);
+
 		if(!check)
 			for(int j = 0; j < WIDTH; j++)
 				if(field[0][j]){
@@ -380,9 +385,6 @@ void BlockDown(int sig) {
 		if (check)
 			gameOver = 1;
 
-		score += AddBlockToField(field, nextBlock[0], blockRotate, blockY, blockX);
-		score += DeleteLine(field);
-		PrintScore(score);
 		nextBlock[0] = nextBlock[1];
 		nextBlock[1] = nextBlock[2];
 		nextBlock[2] = rand() % NUM_OF_SHAPE;
@@ -539,6 +541,13 @@ void createRankList(){
 	//1. 파일 열기
 	fp = fopen("rank.txt", "r");
 
+	if(!fp){ // 파일이 없을 때 기본 파일 생성
+		fp = fopen("rank.txt", "w");
+		fprintf(fp, "0\n");
+		fclose(fp);
+		fp = fopen("rank.txt", "r");
+	}
+
 	// 2. 정보읽어오기
 	/* int fscanf(FILE* stream, const char* format, ...);
 	stream:데이터를 읽어올 스트림의 FILE 객체를 가리키는 파일포인터
@@ -626,7 +635,7 @@ void rank(){
 	else if ( ch == '2') {
 		char str[NAMELEN+1];
 		int check = 0;
-		printw("name: ");
+		printw("Input the name: ");
 		readstring(str, NAMELEN);
 
 		printw("       name       |   score\n");
@@ -834,6 +843,7 @@ void rankfree(){
 
 void DrawRecommend(int y, int x, int blockID, int blockRotate) {
 	// user code
+
 }
 
 int recommend(RecNode* root) {
