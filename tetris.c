@@ -542,9 +542,7 @@ void createRankList(){
 	fp = fopen("rank.txt", "r");
 
 	if(!fp){ // 파일이 없을 때 기본 파일 생성
-		fp = fopen("rank.txt", "w");
-		fprintf(fp, "0\n");
-		fclose(fp);
+		writeRankFile();
 		fp = fopen("rank.txt", "r");
 	}
 
@@ -682,7 +680,7 @@ void rank(){
 
 void writeRankFile(){
 	// 목적: 추가된 랭킹 정보가 있으면 새로운 정보를 "rank.txt"에 쓰고 없으면 종료
-	int sn, i;
+	int i;
 	//1. "rank.txt" 연다
 	FILE *fp = fopen("rank.txt", "w");
 
