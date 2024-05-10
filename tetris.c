@@ -614,19 +614,17 @@ void rank(){
 		if(Y > score_number)
 			Y = score_number;
 		
-		if(score_number) {
-			if(X <= Y && X <= score_number) {
-				for(i = 0; i < X; i++) {
-					curr = curr->link;
-				}
-				for(; i <= Y; i++) {
-					printw("%-16s  | %d\n", curr->name, curr->score);
-					curr = curr->link;
-				}
+		if(score_number && X <= Y) {
+			for(i = 0; i < X; i++) {
+				curr = curr->link;
 			}
-			else {
-				printw("\nsearch failure: no rank in the list\n");
+			for(; i <= Y; i++) {
+				printw("%-16s  | %d\n", curr->name, curr->score);
+				curr = curr->link;
 			}
+		}
+		else {
+			printw("\nsearch failure: no rank in the list\n");
 		}
 
 	}
