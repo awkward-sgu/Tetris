@@ -712,23 +712,20 @@ void newRank(int score){
 	newnode->score = score;
 
 
-	Node* prev = a;
-	Node* curr = a->link;
+	Node* curr = a;
 
 	for(j = 0; j < score_number; j++){
-		if(newnode->score > curr->score)
+		if(newnode->score > curr->link->score)
 			break;
-		prev = curr;
 		curr = curr->link;
 	}
 
-	prev->link = newnode;
-	newnode->link = curr;
+	newnode->link = curr->link;
+	curr->link = newnode;
 	score_number++;
 
 	if(score_number > CHILDREN_MAX){
-		curr = a;
-		for(i = 0; i < score_number; i++){
+		for(i = j; i < score_number; i++){
 			curr = curr->link;
 		}
 		Node* temp = curr;
