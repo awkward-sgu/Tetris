@@ -554,6 +554,11 @@ void createRankList(){
 	return: 성공할 경우, fscanf 함수는 읽어들인 데이터의 수를 리턴, 실패하면 EOF리턴 */
 	// EOF(End Of File): 실제로 이 값은 -1을 나타냄, EOF가 나타날때까지 입력받아오는 if문
 	if (fscanf(fp, "%d", &j) != EOF) {
+		if(j < 0)
+			j = 0;
+		if(j > MAX_NODE)
+			j = MAX_NODE;
+		
 		for(i = 0; i < j; i++) {
 			curr->link = malloc(sizeof(Node));
 			curr = curr->link;
@@ -724,7 +729,7 @@ void newRank(int score){
 	curr->link = newnode;
 	score_number++;
 
-	if(score_number > CHILDREN_MAX){
+	if(score_number > MAX_NODE){
 		for(i = j; i < score_number; i++){
 			curr = curr->link;
 		}

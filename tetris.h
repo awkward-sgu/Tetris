@@ -38,7 +38,7 @@
 #define NAMELEN 16
 #define MAX_RANK 100
 // 최대 노드의 개수
-#define CHILDREN_MAX 36
+#define MAX_NODE 36
 
 // added - rank system
 typedef struct _Node{
@@ -49,6 +49,9 @@ typedef struct _Node{
 
 Node* a = NULL;
 int score_number;
+
+
+#define CHILDREN_MAX 36
 
 
 typedef struct _RecNode{
