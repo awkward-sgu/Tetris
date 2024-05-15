@@ -34,7 +34,7 @@
 // menu number
 #define MENU_PLAY '1'
 #define MENU_RANK '2'
-#define MENU_RECOMMEND '3'
+#define MENU_REC_PLAY '3'
 #define MENU_EXIT '4'
 
 // 사용자 이름의 길이
@@ -177,7 +177,7 @@ int blockRotate,blockY,blockX;	/* 현재 블럭의 회전, 블럭의 Y 좌표, �
 int score;			/* 점수가 저장*/
 int gameOver=0;			/* 게임이 종료되면 1로 setting된다.*/
 int timed_out;
-int recommendR,recommendY,recommendX; // 추천 블럭 배치 정보. 차례대로 회전, Y 좌표, X 좌표
+char mode;
 RecNode *recRoot;
 
 
@@ -448,5 +448,17 @@ int modified_recommend(RecNode *root);
  ***********************************************************/
 void recommendedPlay();
 
+/***********************************************************
+ *	테트리스와 관련된 키입력을 받는다. - 자동화
+ *	input	: none
+ *	return	: (int) 입력받은 command
+ *		  KEY_DOWN : 방향키 아래
+ *		  KEY_UP   : 방향키 위
+ *		  KEY_RIGHT: 방향키 오른쪽
+ *		  KEY_LEFT : 방향키 왼쪽
+ *		  ' '	   : Space bar
+ *		  'q'/'Q'  : quit
+ ***********************************************************/
+int NewGetCommand();
 
 #endif

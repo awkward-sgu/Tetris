@@ -16,9 +16,11 @@ int main() {
 
 	while (!exit) {
 		clear();
-		switch (menu()) {
+		mode = menu();
+		switch (mode) {
 		case MENU_PLAY: play(); break;
 		case MENU_RANK: rank(); break;
+		case MENU_REC_PLAY: recommendedPlay(); break;
 		case MENU_EXIT: exit = 1; break;
 		default: break;
 		}
@@ -49,7 +51,7 @@ void InitTetris() {
 
 	DrawOutline();
 	DrawField();
-	if(RECOMMEND_ON)
+	if(RECOMMEND_ON || mode == '3')
 		modified_recommend(root);
 	DrawBlockWithFeatures(blockY, blockX, nextBlock[0], blockRotate);
 	DrawNextBlock(nextBlock);
@@ -393,7 +395,7 @@ void BlockDown(int sig) {
 		nextBlock[1] = nextBlock[2];
 		nextBlock[2] = rand() % NUM_OF_SHAPE;
 
-		if(RECOMMEND_ON)
+		if(RECOMMEND_ON || mode == '3')
 			modified_recommend(root);
 
 		blockRotate = 0;
@@ -467,17 +469,15 @@ int DeleteLine(char f[HEIGHT][WIDTH]) {
 void DrawShadow(int y, int x, int blockID, int blockRotate) {
 	// user code
 
-	if (SHADOW_ON) {
-		int shadowY;
-		for (shadowY = y; shadowY < HEIGHT; shadowY++) {
-			if (!CheckToMove(field, blockID, blockRotate, shadowY + 1, x)) {
-				break;
-			}
+	int shadowY;
+	for (shadowY = y; shadowY < HEIGHT; shadowY++) {
+		if (!CheckToMove(field, blockID, blockRotate, shadowY + 1, x)) {
+			break;
 		}
-
-		if (shadowY - y >= 4)
-			DrawBlock(shadowY, blockX, blockID, blockRotate, '/');
 	}
+
+	if (shadowY - y >= 4)
+		DrawBlock(shadowY, blockX, blockID, blockRotate, '/');
 
 }
 
@@ -543,8 +543,10 @@ void DeleteBlock(int y, int x, int blockID, int blockRotate) {
 void DrawBlockWithFeatures(int y, int x, int blockID, int blockRotate) {
 	// user code
 	DrawBlock(y, x, blockID, blockRotate, ' ');
-	DrawRecommend(y, x, blockID, blockRotate);
-	DrawShadow(y, x, blockID, blockRotate);
+	if(RECOMMEND_ON)
+		DrawRecommend(y, x, blockID, blockRotate);
+	if (SHADOW_ON)
+		DrawShadow(y, x, blockID, blockRotate);
 }
 
 
@@ -920,7 +922,7 @@ int recommend(RecNode* root) {
 	temp->child = root->child->child;
 
 	for(rotate = 0; rotate < NUM_OF_ROTATE; rotate++){
-		for(i = 0; i < WIDTH; i++){
+		for(i = -2; i < WIDTH + 2; i++){
 
 			for(int h = 0; h < HEIGHT; h++){
 				for(int w = 0; w < WIDTH; w++){
@@ -1053,4 +1055,78 @@ int modified_recommend(RecNode* root) {
 void recommendedPlay() {
 	// user code
 
+	int command = NOTHING;
+	clear();
+	act.sa_handler = BlockDown;
+	sigaction(SIGALRM, &act, &oact);
+	InitTetris();
+
+	do {
+		if (timed_out == 0) {
+			alarm(1);
+			timed_out = 1;
+		}
+		command = NewGetCommand();
+
+		if (ProcessCommand(command) == QUIT) {
+			alarm(0);
+			if(WIDE_BLOCK){
+				DrawBox(HEIGHT / 2 - 1, WIDTH - 10, 1, 20);
+				move(HEIGHT / 2, WIDTH - 9);
+				printw("     Good-bye!!     ");
+			}
+			else{
+				DrawBox(HEIGHT / 2 - 1, WIDTH / 2 - 5, 1, 10);
+				move(HEIGHT / 2, WIDTH / 2 - 4);
+				printw("Good-bye!!");
+			}
+			move(HEIGHT, MODIFIED_WIDTH + 10); // added
+			refresh();
+			getch();
+
+			return;
+		}
+	} while (!gameOver);
+
+	alarm(0);
+	getch();
+	if(WIDE_BLOCK){
+		DrawBox(HEIGHT / 2 - 1, WIDTH - 10, 1, 20);
+		move(HEIGHT / 2, WIDTH - 9);
+		printw("     GameOver!!     ");
+	}
+	else{
+		DrawBox(HEIGHT / 2 - 1, WIDTH / 2 - 5, 1, 10);
+		move(HEIGHT / 2, WIDTH / 2 - 4);
+		printw("GameOver!!");
+	}
+	move(HEIGHT, MODIFIED_WIDTH + 10); // added
+	refresh();
+	getch();
+	// newRank(score); - do not write rank
+}
+
+int NewGetCommand() {
+	int command;
+	command = wgetch(stdscr);
+	if(command == 'q' || command == 'Q')
+		command = QUIT;
+	else if (command == -1 && blockY >= 0) { // no input - BlockDown call
+		RecNode* node = root->child;
+		if(blockRotate != node->blockRotate){
+			command = KEY_UP;
+		}
+		else if(blockX > node->blockX){
+			command = KEY_LEFT;
+		}
+		else if(blockX < node->blockX){
+			command = KEY_RIGHT;
+		}
+		else{
+			command = ' ';
+		}
+	}
+	else
+		command = NOTHING;
+	return command;
 }
