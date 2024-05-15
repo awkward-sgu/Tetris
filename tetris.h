@@ -15,6 +15,7 @@
 #define SHADOW_ON 1
 #define SHOW_NEXT2 1
 #define WIDE_BLOCK 0
+#define RECOMMEND_ON 1
 
 
 
@@ -27,11 +28,13 @@
 #define BLOCK_HEIGHT	4
 #define BLOCK_WIDTH	4
 #define BLOCK_NUM	3
+#define VISIBLE_BLOCKS 3 // 1, 2, 3
 #define MODIFIED_WIDTH WIDTH + WIDTH * WIDE_BLOCK
 
 // menu number
 #define MENU_PLAY '1'
 #define MENU_RANK '2'
+#define MENU_RECOMMEND '3'
 #define MENU_EXIT '4'
 
 // 사용자 이름의 길이
@@ -53,12 +56,18 @@ int score_number;
 
 #define CHILDREN_MAX 36
 
-
 typedef struct _RecNode{
-	int lv,score;
-	char (*f)[WIDTH];
-	struct _RecNode *c[CHILDREN_MAX];
+	int lv, score;
+	char f[HEIGHT][WIDTH];
+	struct _RecNode *child;
+
+	int blockID;
+	int blockX, blockY, blockRotate;
+	//struct _RecNode *parent;
 } RecNode;
+
+RecNode* root = NULL;
+
 
 /* [blockShapeID][# of rotate][][]*/
 const char block[NUM_OF_SHAPE][NUM_OF_ROTATE][BLOCK_HEIGHT][BLOCK_WIDTH] ={
@@ -77,7 +86,7 @@ const char block[NUM_OF_SHAPE][NUM_OF_ROTATE][BLOCK_HEIGHT][BLOCK_WIDTH] ={
 		}
 	},
 	{/*[1][][][];					  ▩▩▩*/
-		{/*[][0][][]				      ▩*/
+		{/*[][0][][]				     ▩*/
 			{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 1, 1, 1}, {0, 0, 0, 1}
 		},
 		{/*[][1][][]*/
@@ -397,16 +406,25 @@ void readnumber(int* num, int size);
 void readstring(char* str, int size);
 
 /***********************************************************
- *	동적할당된 랭크 노드들을 할당 해제한다
+ *	동적할당된 모든 노드들을 할당 해제한다
  *	input	: none
  *	return	: none
  ***********************************************************/
-void rankfree();
+void all_free();
 
 
 
 
+void initRecNode();
 
+/***********************************************************
+ *	추천 블럭의 위치를 보여준다.
+ *	input	: (int) 그림자를 보여줄 블록의 왼쪽 상단모서리의 y 좌표
+ *		  (int) 왼쪽 상단 모서리의 x 좌표
+ *		  (int) 블록의 모양
+ *		  (int) 블록의 회전 횟수
+ *	return	: none
+ ***********************************************************/
 void DrawRecommend(int y, int x, int blockID, int blockRotate);
 
 /***********************************************************
@@ -415,6 +433,13 @@ void DrawRecommend(int y, int x, int blockID, int blockRotate);
  *	return	: (int) 추천 블럭 배치를 따를 때 얻어지는 예상 스코어
  ***********************************************************/
 int recommend(RecNode *root);
+
+/***********************************************************
+ *	추천 블럭 배치를 구한다. - 사용자 구현 함수
+ *	input	: (RecNode*) 추천 트리의 루트
+ *	return	: (int) 추천 블럭 배치를 따를 때 얻어지는 예상 스코어
+ ***********************************************************/
+int modified_recommend(RecNode *root);
 
 /***********************************************************
  *	추천 기능에 따라 블럭을 배치하여 진행하는 게임을 시작한다.

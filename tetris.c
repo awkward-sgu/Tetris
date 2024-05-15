@@ -12,6 +12,7 @@ int main() {
 	srand((unsigned int)time(NULL));
 
 	createRankList();
+	initRecNode();
 
 	while (!exit) {
 		clear();
@@ -25,7 +26,7 @@ int main() {
 
 	endwin();
 	system("clear");
-	rankfree();
+	all_free();
 	return 0;
 }
 
@@ -48,6 +49,8 @@ void InitTetris() {
 
 	DrawOutline();
 	DrawField();
+	if(RECOMMEND_ON)
+		modified_recommend(root);
 	DrawBlockWithFeatures(blockY, blockX, nextBlock[0], blockRotate);
 	DrawNextBlock(nextBlock);
 	PrintScore(score);
@@ -256,6 +259,7 @@ void play() {
 	act.sa_handler = BlockDown;
 	sigaction(SIGALRM, &act, &oact);
 	InitTetris();
+
 	do {
 		if (timed_out == 0) {
 			alarm(1);
@@ -388,6 +392,10 @@ void BlockDown(int sig) {
 		nextBlock[0] = nextBlock[1];
 		nextBlock[1] = nextBlock[2];
 		nextBlock[2] = rand() % NUM_OF_SHAPE;
+
+		if(RECOMMEND_ON)
+			modified_recommend(root);
+
 		blockRotate = 0;
 		blockY = -2; // block does not show here, but next time
 		blockX = WIDTH / 2 - 2;
@@ -488,6 +496,24 @@ void DeleteBlock(int y, int x, int blockID, int blockRotate) {
 			}
 		}
 
+
+	if(RECOMMEND_ON) {
+		RecNode* node = root->child;
+		for (i = 0; i < 4; i++)
+			for (j = 0; j < 4; j++) {
+				if (block[node->blockID][node->blockRotate][i][j] == 1 && i + node->blockY >= 0) {
+					if(WIDE_BLOCK)
+						move(i + node->blockY + 1, (j + node->blockX) * 2 + 1);
+					else
+						move(i + node->blockY + 1, j + node->blockX + 1);
+					printw(".");
+					if(WIDE_BLOCK)
+						printw(" ");
+				}
+			}
+		}
+
+
 	if (SHADOW_ON) {
 		int shadowY;
 		for (shadowY = y; shadowY < HEIGHT; shadowY++) {
@@ -510,13 +536,14 @@ void DeleteBlock(int y, int x, int blockID, int blockRotate) {
 					}
 				}
 	}
+
 	move(HEIGHT, MODIFIED_WIDTH + 10);
 }
 
 void DrawBlockWithFeatures(int y, int x, int blockID, int blockRotate) {
 	// user code
-
 	DrawBlock(y, x, blockID, blockRotate, ' ');
+	DrawRecommend(y, x, blockID, blockRotate);
 	DrawShadow(y, x, blockID, blockRotate);
 }
 
@@ -826,7 +853,7 @@ void readstring(char* str, int size){
 	free(buffer);
 }
 
-void rankfree(){
+void all_free(){
 	Node* curr = a;
 	Node* temp;
 	for(int i = 0; i <= score_number; i++){
@@ -834,24 +861,196 @@ void rankfree(){
 		curr = curr->link;
 		free(temp);
 	}
+
+	RecNode* c = root;
+	RecNode* t;
+	for(int i = 0; i <= VISIBLE_BLOCKS; i++){
+		t = c;
+		c = c->child;
+		free(t);
+	}
 }
 
 //////////////////////    3주차    //////////////////////
 
 
+void initRecNode(){
+	root = malloc(sizeof(RecNode));
+	root->lv = -1;
+	root->score = 0;
+	RecNode* temp = root;
+	for(int i = 0; i < VISIBLE_BLOCKS; i++){
+		temp->child = malloc(sizeof(RecNode));
+		temp->child->lv = temp->lv + 1;
+		temp = temp->child;
+	}
+	temp = NULL;
+}
+
 void DrawRecommend(int y, int x, int blockID, int blockRotate) {
 	// user code
 
+	RecNode* node = root->child;
+	if(node->blockY - y >= 4)
+		DrawBlock(node->blockY, node->blockX, node->blockID, node->blockRotate, 'R');
+	
 }
 
 int recommend(RecNode* root) {
+	// user code
+
 	int max = 0; // 미리 보이는 블럭의 추천 배치까지 고려했을 때 얻을 수 있는 최대 점수
 
+	int i, j;
+	int rotate;
+
+	
+	if(root->lv == -1){
+		for(int h = 0; h < HEIGHT; h++)
+			for(int w = 0; w < WIDTH; w++)
+				root->f[h][w] = field[h][w];
+		
+		root->score = 0;
+	}
+
+
+	RecNode* temp = malloc(sizeof(RecNode));
+	temp->lv = root->lv + 1;
+	temp->blockID = nextBlock[temp->lv];
+	temp->child = root->child->child;
+
+	for(rotate = 0; rotate < NUM_OF_ROTATE; rotate++){
+		for(i = 0; i < WIDTH; i++){
+
+			for(int h = 0; h < HEIGHT; h++){
+				for(int w = 0; w < WIDTH; w++){
+					temp->f[h][w] = root->f[h][w];
+				}
+			}
+
+
+			if (CheckToMove(temp->f, temp->blockID, rotate, 0, i)){
+				for (j = 0; j < HEIGHT; j++) {
+					if (!CheckToMove(temp->f, temp->blockID, rotate, j + 1, i)) {
+						break;
+					}
+				}
+
+				temp->score = root->score;
+				temp->score += AddBlockToField(temp->f, temp->blockID, rotate, j, i);
+				temp->score += DeleteLine(temp->f);
+
+				if(temp->child)
+					temp->score = recommend(temp);
+
+				if(temp->score > max){
+					temp->blockRotate = rotate;
+					temp->blockX = i;
+					temp->blockY = j;
+
+					max = temp->score;
+
+				}
+			
+			}
+		}
+	}
+
+	free(root->child);
+	root->child = temp;
+
+	if(root->lv == -1){
+		RecNode* c = root;
+		for(int i = 0; i <= VISIBLE_BLOCKS; i++){
+			c->score = max;
+			c = c->child;
+		}
+	}
+
+	return max;
+}
+
+int modified_recommend(RecNode* root) {
 	// user code
+
+	int max = 0; // 미리 보이는 블럭의 추천 배치까지 고려했을 때 얻을 수 있는 최대 점수
+
+	int i, j;
+	int rotate;
+
+	int r[NUM_OF_SHAPE] = { 2, 4, 4, 4, 1, 2, 2 }; // possible shapes
+
+	
+	if(root->lv == -1){
+		for(int h = 0; h < HEIGHT; h++)
+			for(int w = 0; w < WIDTH; w++)
+				root->f[h][w] = field[h][w];
+		
+		root->score = 0;
+	}
+
+
+	RecNode* temp = malloc(sizeof(RecNode));
+	temp->lv = root->lv + 1;
+	temp->blockID = nextBlock[temp->lv];
+	temp->blockY = 0;
+	temp->blockX = 0;
+	temp->child = root->child->child;
+
+	for(rotate = 0; rotate < r[temp->blockID]; rotate++){
+		for(i = -2; i < WIDTH + 2; i++){
+			if (CheckToMove(temp->f, temp->blockID, rotate, 0, i)){
+
+				for(int h = 0; h < HEIGHT; h++){
+					for(int w = 0; w < WIDTH; w++){
+						temp->f[h][w] = root->f[h][w];
+					}
+				}
+
+
+
+				for (j = 0; j < HEIGHT; j++) {
+					if (!CheckToMove(temp->f, temp->blockID, rotate, j + 1, i)) {
+						break;
+					}
+				}
+
+				temp->score = root->score;
+				temp->score += AddBlockToField(temp->f, temp->blockID, rotate, j, i);
+				temp->score += DeleteLine(temp->f);
+
+
+				if(j >= temp->blockY && temp->child)
+					temp->score = modified_recommend(temp);
+				
+
+				if(temp->score >= max){
+					temp->blockRotate = rotate;
+					temp->blockX = i;
+					temp->blockY = j;
+
+					max = temp->score;
+				}
+			
+			}
+		}
+	}
+
+	free(root->child);
+	root->child = temp;
+
+	if(root->lv == -1){
+		RecNode* c = root;
+		for(int i = 0; i <= VISIBLE_BLOCKS; i++){
+			c->score = max;
+			c = c->child;
+		}
+	}
 
 	return max;
 }
 
 void recommendedPlay() {
 	// user code
+
 }
