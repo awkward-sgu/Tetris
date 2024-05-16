@@ -961,14 +961,6 @@ int recommend(RecNode* root) {
 	free(root->child);
 	root->child = temp;
 
-	if(root->lv == -1){
-		RecNode* c = root;
-		for(int i = 0; i <= VISIBLE_BLOCKS; i++){
-			c->score = max;
-			c = c->child;
-		}
-	}
-
 	return max;
 }
 
@@ -1040,14 +1032,6 @@ int modified_recommend(RecNode* root) {
 
 	free(root->child);
 	root->child = temp;
-
-	if(root->lv == -1){
-		RecNode* c = root;
-		for(int i = 0; i <= VISIBLE_BLOCKS; i++){
-			c->score = max;
-			c = c->child;
-		}
-	}
 
 	return max;
 }
