@@ -51,8 +51,12 @@ void InitTetris() {
 
 	DrawOutline();
 	DrawField();
-	if(RECOMMEND_ON || mode == '3')
-		modified_recommend(root);
+	if(RECOMMEND_ON || mode == '3'){
+		if(MODIFIED)
+			modified_recommend(root);
+		else
+			recommend(root);
+	}
 	DrawBlockWithFeatures(blockY, blockX, nextBlock[0], blockRotate);
 	DrawNextBlock(nextBlock);
 	PrintScore(score);
@@ -395,8 +399,12 @@ void BlockDown(int sig) {
 		nextBlock[1] = nextBlock[2];
 		nextBlock[2] = rand() % NUM_OF_SHAPE;
 
-		if(RECOMMEND_ON || mode == '3')
+		if(RECOMMEND_ON || mode == '3'){
+			if(MODIFIED)
 			modified_recommend(root);
+			else
+				recommend(root);
+		}
 
 		blockRotate = 0;
 		blockY = -2; // block does not show here, but next time
@@ -876,7 +884,7 @@ void all_free(){
 //////////////////////    3주차    //////////////////////
 
 
-void initRecNode(){
+void initRecNode(){ // init tree used for recommend
 	root = malloc(sizeof(RecNode));
 	root->lv = -1;
 	root->score = 0;
@@ -892,8 +900,8 @@ void initRecNode(){
 void DrawRecommend(int y, int x, int blockID, int blockRotate) {
 	// user code
 
-	RecNode* node = root->child;
-	if(node->blockY - y >= 4)
+	RecNode* node = root->child; // showing recommended nextBlock[0]
+	if(node->blockY - y >= 4) // do not overlap
 		DrawBlock(node->blockY, node->blockX, node->blockID, node->blockRotate, 'R');
 	
 }
@@ -906,33 +914,41 @@ int recommend(RecNode* root) {
 	int i, j;
 	int rotate;
 
+	int r[NUM_OF_SHAPE] = { 2, 4, 4, 4, 1, 2, 2 }; // possible shapes
+
 	
-	if(root->lv == -1){
-		for(int h = 0; h < HEIGHT; h++)
+	if(root->lv == -1){ // init for root node
+		for(int h = 0; h < HEIGHT; h++) // init field
 			for(int w = 0; w < WIDTH; w++)
 				root->f[h][w] = field[h][w];
 		
-		root->score = 0;
+		root->score = 0; // init score
 	}
 
 
-	RecNode* temp = malloc(sizeof(RecNode));
+	RecNode* temp = malloc(sizeof(RecNode)); // malloc temp comparison RecNode
 	temp->lv = root->lv + 1;
 	temp->blockID = nextBlock[temp->lv];
+	temp->blockY = 0;
+	temp->blockX = 0;
 	temp->child = root->child->child;
+	// init, set as same as the child of root: after the loop, replace with the child
 
-	for(rotate = 0; rotate < NUM_OF_ROTATE; rotate++){
+	for(rotate = 0; rotate < r[temp->blockID]; rotate++){
 		for(i = -2; i < WIDTH + 2; i++){
+			// loop for possible shapes, possible positions
 
-			for(int h = 0; h < HEIGHT; h++){
-				for(int w = 0; w < WIDTH; w++){
-					temp->f[h][w] = root->f[h][w];
+			if (CheckToMove(temp->f, temp->blockID, rotate, 0, i)){ // check if possible
+
+				for(int h = 0; h < HEIGHT; h++){ // copy field of root
+					for(int w = 0; w < WIDTH; w++){
+						temp->f[h][w] = root->f[h][w];
+					}
 				}
-			}
 
 
-			if (CheckToMove(temp->f, temp->blockID, rotate, 0, i)){
-				for (j = 0; j < HEIGHT; j++) {
+
+				for (j = 0; j < HEIGHT; j++) { // move block to its lowest position possible - like shadow function
 					if (!CheckToMove(temp->f, temp->blockID, rotate, j + 1, i)) {
 						break;
 					}
@@ -941,11 +957,12 @@ int recommend(RecNode* root) {
 				temp->score = root->score;
 				temp->score += AddBlockToField(temp->f, temp->blockID, rotate, j, i);
 				temp->score += DeleteLine(temp->f);
+				// calculating the score
 
-				if(temp->child)
-					temp->score = recommend(temp);
+				if(temp->child) // if the child exists - last node check
+					temp->score = recommend(temp); // not += since temp->score = root->score
 
-				if(temp->score > max){
+				if(temp->score > max){ // if the score is larger than current max score, then replace
 					temp->blockRotate = rotate;
 					temp->blockX = i;
 					temp->blockY = j;
@@ -960,6 +977,7 @@ int recommend(RecNode* root) {
 
 	free(root->child);
 	root->child = temp;
+	// replace child node
 
 	return max;
 }
@@ -975,27 +993,30 @@ int modified_recommend(RecNode* root) {
 	int r[NUM_OF_SHAPE] = { 2, 4, 4, 4, 1, 2, 2 }; // possible shapes
 
 	
-	if(root->lv == -1){
-		for(int h = 0; h < HEIGHT; h++)
+	if(root->lv == -1){ // init for root node
+		for(int h = 0; h < HEIGHT; h++) // init field
 			for(int w = 0; w < WIDTH; w++)
 				root->f[h][w] = field[h][w];
 		
-		root->score = 0;
+		root->score = 0; // init score
 	}
 
 
-	RecNode* temp = malloc(sizeof(RecNode));
+	RecNode* temp = malloc(sizeof(RecNode)); // malloc temp comparison RecNode
 	temp->lv = root->lv + 1;
 	temp->blockID = nextBlock[temp->lv];
 	temp->blockY = 0;
 	temp->blockX = 0;
 	temp->child = root->child->child;
+	// init, set as same as the child of root: after the loop, replace with the child
 
 	for(rotate = 0; rotate < r[temp->blockID]; rotate++){
 		for(i = -2; i < WIDTH + 2; i++){
-			if (CheckToMove(temp->f, temp->blockID, rotate, 0, i)){
+			// loop for possible shapes, possible positions
 
-				for(int h = 0; h < HEIGHT; h++){
+			if (CheckToMove(temp->f, temp->blockID, rotate, 0, i)){ // check if possible
+
+				for(int h = 0; h < HEIGHT; h++){ // copy field of root
 					for(int w = 0; w < WIDTH; w++){
 						temp->f[h][w] = root->f[h][w];
 					}
@@ -1003,7 +1024,7 @@ int modified_recommend(RecNode* root) {
 
 
 
-				for (j = 0; j < HEIGHT; j++) {
+				for (j = 0; j < HEIGHT; j++) { // move block to its lowest position possible - like shadow function
 					if (!CheckToMove(temp->f, temp->blockID, rotate, j + 1, i)) {
 						break;
 					}
@@ -1012,13 +1033,15 @@ int modified_recommend(RecNode* root) {
 				temp->score = root->score;
 				temp->score += AddBlockToField(temp->f, temp->blockID, rotate, j, i);
 				temp->score += DeleteLine(temp->f);
+				// calculating the score
 
-
-				if(j >= temp->blockY && temp->child)
-					temp->score = modified_recommend(temp);
+				if(j >= temp->blockY && temp->child) // if the child exists - last node check
+					// + if current block's Y coordinate is lower than current max node
+					temp->score = modified_recommend(temp); // not += since temp->score = root->score
 				
 
-				if(temp->score >= max){
+				if(temp->score >= max){ // if the score is larger than current max score, then replace
+					// + also count for equal: in order not to be left-centered
 					temp->blockRotate = rotate;
 					temp->blockX = i;
 					temp->blockY = j;
@@ -1032,6 +1055,7 @@ int modified_recommend(RecNode* root) {
 
 	free(root->child);
 	root->child = temp;
+	// replace child node
 
 	return max;
 }
@@ -1039,6 +1063,8 @@ int modified_recommend(RecNode* root) {
 void recommendedPlay() {
 	// user code
 
+
+	// same as blockdown
 	int command = NOTHING;
 	clear();
 	act.sa_handler = BlockDown;
@@ -1050,7 +1076,7 @@ void recommendedPlay() {
 			alarm(1);
 			timed_out = 1;
 		}
-		command = NewGetCommand();
+		command = NewGetCommand(); // GetCommand -> NewGetCommand
 
 		if (ProcessCommand(command) == QUIT) {
 			alarm(0);
@@ -1095,7 +1121,7 @@ int NewGetCommand() {
 	command = wgetch(stdscr);
 	if(command == 'q' || command == 'Q')
 		command = QUIT;
-	else if (command == -1 && blockY >= 0) { // no input - BlockDown call
+	else if (command == -1 && blockY >= 0) { // no input - if BlockDown call
 		RecNode* node = root->child;
 		if(blockRotate != node->blockRotate){
 			command = KEY_UP;
@@ -1109,8 +1135,9 @@ int NewGetCommand() {
 		else{
 			command = ' ';
 		}
+		// 1.set shape, 2.set X coordinate 3.fall block
 	}
 	else
-		command = NOTHING;
+		command = NOTHING; // ban user input (except for QUIT)
 	return command;
 }

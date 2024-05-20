@@ -16,6 +16,7 @@
 #define SHOW_NEXT2 1
 #define WIDE_BLOCK 0
 #define RECOMMEND_ON 1
+#define MODIFIED 1
 
 
 
